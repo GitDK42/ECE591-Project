@@ -154,4 +154,8 @@ fprintf(['  Delta_2 Error = %f radians\n  Delta_3 Error = %f radians\n  Delta_4 
 disp('Calculated Values:');
 fprintf(['  Delta_2 = %.3f Degrees\n  Delta_3 = %.3f Degrees\n  Delta_4 = %.3f Degrees\n'...
     '  V4 = %.3f Volts\n\n'],...
+<<<<<<< HEAD
     rad2deg(d2), rad2deg(d3), rad2deg(d4), V4);
+=======
+    rad2deg(d2), rad2deg(d3), rad2deg(d4), V4);
+>>>>>>> 68cba9a44ecdba010b844ee370a4c1e04201bd7f
