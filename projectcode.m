@@ -87,11 +87,11 @@ P2 = 0.25; P3 = 0.35; P4 = -0.72;
 Q4 = -0.19;
 
 f1 = @(d2,d3,d4,V4) ...
-    ( -P2 + V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4));  % P2 eq
+    ( -P2 + V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4) );  % P2 eq
 f2 = @(d2,d3,d4,V4) ...
-    ( -P3 + V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4));  % P3 eq
+    ( -P3 + V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4) );  % P3 eq
 f3 = @(d2,d3,d4,V4) ...
-    ( -P4 + V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3));  % P4 eq
+    ( -P4 + V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3) );  % P4 eq
 f4 = @(d2,d3,d4,V4) ...
     ( -Q4 - B(4,4)*V4^2 - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3) ); % Q4 eq
 
@@ -154,8 +154,47 @@ fprintf(['  Delta_2 Error = %f radians\n  Delta_3 Error = %f radians\n  Delta_4 
     '  V4 Error = %f Volts\n'...
     'Num Iterations = %i\n\n'],...
     dx(1), dx(2), dx(3), dx(4),iterations);
-disp('Calculated Values:');
-fprintf(['  Delta_2 = %.3f Degrees\n  Delta_3 = %.3f Degrees\n  Delta_4 = %.3f Degrees\n'...
-    '  V4 = %.3f Volts\n\n'],...
-    rad2deg(d2), rad2deg(d3), rad2deg(d4), V4);
+
+% Bus Powers
+P1 =  V2*B(1,2)*sin(d1-d2) + V3*B(1,3)*sin(d1-d3);
+Q1 = -V1^2*B(1,1) - V2*B(1,2)*cos(d1-d2) - V3*B(1,3)*cos(d1-d3);
+P2 =  V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4);
+Q2 = -V2^2*B(2,2) - V2*B(2,1)*cos(d2-d1) - V2*V4*B(2,4)*cos(d2-d4);
+P3 =  V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4)
+Q3 = -V3^2*B(3,3) - V3*B(3,1)*cos(d3-d1)+V3*V4*B(3,4)*cos(d3-d4);
+P4 =  V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3);
+Q4 = -B(4,4)*V4^2 - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3);
+
+% Line Currents:
+Itop = (V1*(cos(d1)+1i*sin(d1))-V2*(cos(d2)+1i*sin(d2)))/Ztop;       %(V1-V2)/Ztop
+Ileft = (V1*(cos(d1)+1i*sin(d1))-V3*(cos(d3)+1i*sin(d3)))/Zleft;     %(V1-V3)/Zleft
+Iright = (V2*(cos(d2)+1i*sin(d2))-V4*(cos(d4)+1i*sin(d4)))/Zright;   %(V2-V4)/Zright
+Ibottom = (V3*(cos(d3)+1i*sin(d3))-V4*(cos(d4)+1i*sin(d4)))/Zbottom; %(V3-V4)/Zbottom
+
+% Line Powers:
+Qtop = abs(Itop)^2 * Ztop;
+Qleft = abs(Ileft)^2 * Zleft;
+Qright = abs(Iright)^2 * Zright;
+Qbottom = abs(Ibottom)^2 * Zbottom;
+disp('Calculated Values (Per Unit):');
+disp('Bus 1:');
+fprintf(['  V1 = %+.3f Volts\n  d1 = %+.3f Degrees\n  P1 = %+.3f Watts\n  Q1 = %+.3f VAr\n\n'],...
+    V1, rad2deg(d1), P1, Q1);
+disp('Bus 1:');
+fprintf(['  V2 = %+.3f Volts\n  d2 = %+.3f Degrees\n  P2 = %+.3f Watts\n  Q2 = %+.3f VAr\n\n'],...
+    V2, rad2deg(d2), P2, Q2);
+disp('Bus 1:');
+fprintf(['  V3 = %+.3f Volts\n  d3 = %+.3f Degrees\n  P3 = %+.3f Watts\n  Q3 = %+.3f VAr\n\n'],...
+    V3, rad2deg(d3), P3, Q3);
+disp('Bus 4:');
+fprintf(['  V4 = %+.3f Volts\n  d4 = %+.3f Degrees\n  P4 = %+.3f Watts\n  Q4 = %+.3f VAr\n\n'],...
+    V4, rad2deg(d4), P4, Q4);
+disp('Total Real Grid Power:');
+fprintf('  P_total = %+.10f\n',P1+P2+P3+P4);
+disp('Total Reactive Grid Power:');
+fprintf('  Q_total = %+.10f\n',Q1+Q2+Q3+Q4+Qtop+Qleft+Qright+Qbottom);
+% fprintf(['  Delta_2 = %+.3f Degrees\n  Delta_3 = %+.3f Degrees\n  Delta_4 = %+.3f Degrees\n'...
+%     '  V4 = %+.3f Volts\n  P1 = %+.3f Watts\n  Q1 = %+.3f VAr\n  Q2 = %+.3f VAr\n  Q3 = %+.3f VAr\n'...
+%     '  P4 = %+.3f Watts\n  Q4 = %+.3f VAr\n\n'],...
+%     rad2deg(d2), rad2deg(d3), rad2deg(d4), V4, P1, Q1, Q2, Q3, P4, Q4);
 
