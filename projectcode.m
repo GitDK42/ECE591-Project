@@ -1,5 +1,5 @@
 %% Setup
-%%  This is a test line to commit
+
 M = 1e6;
 k = 1e3;
 TijStr = ['T12:';'T21:';'T13:';'T43:'];
@@ -8,7 +8,7 @@ XkStr = ['G1 :';'G2 :';'M1 :'];
 ZijStr =['Z12:';'Z13:';'Z24:';'Z34:'];
 str=[TijStr; TkStr; XkStr; ZijStr];
 
-%% Change of base 
+%% a.) Change of base 
 %T12 = 200*M; T21=60*M; T13=60*M; T43*M;
 % Tij         T12    T21   T13   T43
 TijSb_old = [200*M, 60*M, 50*M, 50*M];
@@ -51,7 +51,7 @@ for i = 1:14
     fprintf('%s %f\n',str(i,:),Zpu(i));
 end
 
-%% Ybus
+%% b.) Ybus
 
 % [ 1/(T12+Z12+T21+T13+Z13)  -1/(T12+Z12+T21)  -1/(T13+Z13)          0     ]    
 % [  -1/(T12+Z12+T21)     1/(T12+Z12+T21+Z24)        0            -1/(Z24) ] 
@@ -80,7 +80,7 @@ Y4 = [ 0,...
 Y = 1i*[Y1;Y2;Y3;Y4] % Ybus is all Bs as Z values are purely imaginary.
 G = real(Y);
 B = imag(Y);
-%% Newton-Raphson Method
+%% c.) Newton-Raphson Method
 V1 = 1; V2 = 0.95; V3 = 1.02;
 d1 = 0; 
 P2 = 0.25; P3 = 0.35; P4 = -0.72;
@@ -116,7 +116,7 @@ V4=V4_0;
 
 dx = [1,1,1,1];
 
-threshold = 0.01;
+threshold = 0.001;
 iterations=0;
 allowedIter = 100000;
 
@@ -176,6 +176,7 @@ Qtop = abs(Itop)^2 * Ztop;
 Qleft = abs(Ileft)^2 * Zleft;
 Qright = abs(Iright)^2 * Zright;
 Qbottom = abs(Ibottom)^2 * Zbottom;
+
 disp('Calculated Values (Per Unit):');
 disp('Bus 1:');
 fprintf(['  V1 = %+.3f Volts\n  d1 = %+.3f Degrees\n  P1 = %+.3f Watts\n  Q1 = %+.3f VAr\n\n'],...
@@ -192,9 +193,17 @@ fprintf(['  V4 = %+.3f Volts\n  d4 = %+.3f Degrees\n  P4 = %+.3f Watts\n  Q4 = %
 disp('Total Real Grid Power:');
 fprintf('  P_total = %+.10f\n',P1+P2+P3+P4);
 disp('Total Reactive Grid Power:');
-fprintf('  Q_total = %+.10f\n',Q1+Q2+Q3+Q4+Qtop+Qleft+Qright+Qbottom);
+fprintf('  Q_total = %+.10f\n\n',Q1+Q2+Q3+Q4+Qtop+Qleft+Qright+Qbottom);
 % fprintf(['  Delta_2 = %+.3f Degrees\n  Delta_3 = %+.3f Degrees\n  Delta_4 = %+.3f Degrees\n'...
 %     '  V4 = %+.3f Volts\n  P1 = %+.3f Watts\n  Q1 = %+.3f VAr\n  Q2 = %+.3f VAr\n  Q3 = %+.3f VAr\n'...
 %     '  P4 = %+.3f Watts\n  Q4 = %+.3f VAr\n\n'],...
 %     rad2deg(d2), rad2deg(d3), rad2deg(d4), V4, P1, Q1, Q2, Q3, P4, Q4);
+
+%% d.) Eaf_G2 and delta_G2
+X2 = Zpu(Xk(2)) + Zpu(Tk(1));  % TG2 + XG2 = 1.7
+dG2 = atan( (P2*X2/V2) / (Q2*X2/V2 + V2) ); % relative to Bus 2
+e_afG2 = X2*P2/(V2*sin(dG2+d2));
+disp('G2 V and Delta relative to slack bus');
+fprintf('  dG2 = %+.3f Degrees\n  e_afG2 = %+.3f\n\n',dG2+d2, e_afG2);
+
 
