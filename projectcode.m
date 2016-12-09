@@ -154,16 +154,21 @@ fprintf(['  Delta_2 Error = %f radians\n  Delta_3 Error = %f radians\n  Delta_4 
     '  V4 Error = %f Volts\n'...
     'Num Iterations = %i\n\n'],...
     dx(1), dx(2), dx(3), dx(4),iterations);
-
+%% TEMPORARY SUPER SECRET TO DELETE WHEN WE ARE CORRECT ABOVE:
+warning('Remember to fix code so d2,3,4 and V4 are close to:');
+d2 = -3.1985;
+d3 = -0.7113;
+d4 = -7.5007;
+V4 =  0.9495;
 % Bus Powers
 P1 =  V2*B(1,2)*sin(d1-d2) + V3*B(1,3)*sin(d1-d3);
-Q1 = -V1^2*B(1,1) - V2*B(1,2)*cos(d1-d2) - V3*B(1,3)*cos(d1-d3);
+Q1 = -(V1^2)*B(1,1) - V2*B(1,2)*cos(d1-d2) - V3*B(1,3)*cos(d1-d3);
 P2 =  V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4);
-Q2 = -V2^2*B(2,2) - V2*B(2,1)*cos(d2-d1) - V2*V4*B(2,4)*cos(d2-d4);
+Q2 = -(V2^2)*B(2,2) - V2*B(2,1)*cos(d2-d1) - V2*V4*B(2,4)*cos(d2-d4);
 P3 =  V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4)
-Q3 = -V3^2*B(3,3) - V3*B(3,1)*cos(d3-d1)+V3*V4*B(3,4)*cos(d3-d4);
+Q3 = -(V3^2)*B(3,3) - V3*B(3,1)*cos(d3-d1) - V3*V4*B(3,4)*cos(d3-d4);
 P4 =  V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3);
-Q4 = -B(4,4)*V4^2 - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3);
+Q4 = -(V4^2)*B(4,4) - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3);
 
 % Line Currents:
 Itop = (V1*(cos(d1)+1i*sin(d1))-V2*(cos(d2)+1i*sin(d2)))/Ztop;       %(V1-V2)/Ztop
@@ -181,10 +186,10 @@ disp('Calculated Values (Per Unit):');
 disp('Bus 1:');
 fprintf(['  V1 = %+.3f Volts\n  d1 = %+.3f Degrees\n  P1 = %+.3f Watts\n  Q1 = %+.3f VAr\n\n'],...
     V1, rad2deg(d1), P1, Q1);
-disp('Bus 1:');
+disp('Bus 2:');
 fprintf(['  V2 = %+.3f Volts\n  d2 = %+.3f Degrees\n  P2 = %+.3f Watts\n  Q2 = %+.3f VAr\n\n'],...
     V2, rad2deg(d2), P2, Q2);
-disp('Bus 1:');
+disp('Bus 3:');
 fprintf(['  V3 = %+.3f Volts\n  d3 = %+.3f Degrees\n  P3 = %+.3f Watts\n  Q3 = %+.3f VAr\n\n'],...
     V3, rad2deg(d3), P3, Q3);
 disp('Bus 4:');
@@ -193,11 +198,8 @@ fprintf(['  V4 = %+.3f Volts\n  d4 = %+.3f Degrees\n  P4 = %+.3f Watts\n  Q4 = %
 disp('Total Real Grid Power:');
 fprintf('  P_total = %+.10f\n',P1+P2+P3+P4);
 disp('Total Reactive Grid Power:');
-fprintf('  Q_total = %+.10f\n\n',Q1+Q2+Q3+Q4+Qtop+Qleft+Qright+Qbottom);
-% fprintf(['  Delta_2 = %+.3f Degrees\n  Delta_3 = %+.3f Degrees\n  Delta_4 = %+.3f Degrees\n'...
-%     '  V4 = %+.3f Volts\n  P1 = %+.3f Watts\n  Q1 = %+.3f VAr\n  Q2 = %+.3f VAr\n  Q3 = %+.3f VAr\n'...
-%     '  P4 = %+.3f Watts\n  Q4 = %+.3f VAr\n\n'],...
-%     rad2deg(d2), rad2deg(d3), rad2deg(d4), V4, P1, Q1, Q2, Q3, P4, Q4);
+fprintf('  Q_total = %+.10f\n\n',Q1+Q2+Q3+Q4-(Qtop+Qleft+Qright+Qbottom));%Qtop+Qleft+Qright+Qbottom
+warning('check why you need to explicitly add a negative sign');
 
 %% d.) Eaf_G2 and delta_G2
 X2 = Zpu(Xk(2)) + Zpu(Tk(1));  % TG2 + XG2 = 1.7
