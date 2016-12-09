@@ -202,10 +202,11 @@ fprintf('  Q_total = %+.10f\n\n',Q1+Q2+Q3+Q4-(Qtop+Qleft+Qright+Qbottom));%Qtop+
 warning('check why you need to explicitly add a negative sign');
 
 %% d.) Eaf_G2 and delta_G2
-X2 = Zpu(Xk(2)) + Zpu(Tk(1));  % TG2 + XG2 = 1.7
-dG2 = atan( (P2*X2/V2) / (Q2*X2/V2 + V2) ); % relative to Bus 2
-e_afG2 = X2*P2/(V2*sin(dG2+d2));
+X3 = Zpu(Xk(1))*Zb(Xk(1)) + Zpu(Tk(2))*Zb(Tk(2));  % TG2 + XG2 = 1.7
+dG3 = atan( (P3*Sb*X3/(3*V3*XkVb(1)) / (Q3*Sb*X3/(V3*XkVb(1)) + (V3*XkVb(1)))) ); % relative to Bus 2
+e_afG3 = X3*P3*Sb/(3*V3*XkVb(1)*sin(dG3+d3));
+I3 = ( e_afG3*(cos(dG3+d3)+1i*sin(dG3+d3)) - V3*(cos(d3)+1i*sin(d3)) )/ X3;
 disp('G2 V and Delta relative to slack bus');
-fprintf('  dG2 = %+.3f Degrees\n  e_afG2 = %+.3f\n\n',dG2+d2, e_afG2);
-
+fprintf('  dG2 = %+.3f Degrees\n  e_afG2 = %+.3f\n\n',dG3+d3, e_afG3);
+I3_v2 = (V3*B(3,3)+V3*B(3,2)+V1*B(3,1))*XkVb(1)
 
