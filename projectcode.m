@@ -184,20 +184,20 @@ fprintf(['  Delta_2 Error = %f radians\n  Delta_3 Error = %f radians\n  Delta_4 
     'Num Iterations = %i\n\n'],...
     dx(1), dx(2), dx(3), dx(4),iterations);
 %% TEMPORARY SUPER SECRET TO DELETE WHEN WE ARE CORRECT ABOVE:
-% warning('Remember to fix code so d2,3,4 and V4 are close to:');
-% d2 = deg2rad(-3.1985);
-% d3 = deg2rad(-0.7113);
-% d4 = deg2rad(-7.5007);
-% V4 =  0.9495;
+warning('Remember to fix code so d2,3,4 and V4 are close to:');
+d2 = deg2rad(-3.1985);
+d3 = deg2rad(-0.7113);
+d4 = deg2rad(-7.5007);
+V4 =  0.9495;
 % Bus Powers
 P1 =  V2*B(1,2)*sin(d1-d2) + V3*B(1,3)*sin(d1-d3);
 Q1 = -(V1^2)*B(1,1) - V2*B(1,2)*cos(d1-d2) - V3*B(1,3)*cos(d1-d3);
-P2 =  V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4);
+% P2 =  V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4);  % known value
 Q2 = -(V2^2)*B(2,2) - V2*B(2,1)*cos(d2-d1) - V2*V4*B(2,4)*cos(d2-d4);
-P3 =  V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4)
+% P3 =  V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4)   % known value
 Q3 = -(V3^2)*B(3,3) - V3*B(3,1)*cos(d3-d1) - V3*V4*B(3,4)*cos(d3-d4);
-P4 =  V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3);
-Q4 = -(V4^2)*B(4,4) - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3);
+% P4 =  V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3); % known value
+% Q4 = -(V4^2)*B(4,4) - V4*V2*B(4,2)*cos(d4-d2)-V4*V3*B(4,3)*cos(d4-d3);  
 
 % Line Currents:
 Itop = (V1*(cos(d1)+1i*sin(d1))-V2*(cos(d2)+1i*sin(d2)))/Ztop;       %(V1-V2)/Ztop
@@ -231,11 +231,34 @@ fprintf('  Q_total = %+.10f\n\n',Q1+Q2+Q3+Q4-(Qtop+Qleft+Qright+Qbottom));%Qtop+
 warning('check why you need to explicitly add a negative sign');
 
 %% d.) Eaf_G2 and delta_G2
-X3 = Zpu(Xk(1))*Zb(Xk(1)) + Zpu(Tk(2))*Zb(Tk(2));  % TG2 + XG2 = 1.7
-dG3 = atan( (P3*Sb*X3/(3*V3*XkVb(1)) / (Q3*Sb*X3/(V3*XkVb(1)) + (V3*XkVb(1)))) ); % relative to Bus 2
-e_afG3 = X3*P3*Sb/(3*V3*XkVb(1)*sin(dG3+d3));
-I3 = ( e_afG3*(cos(dG3+d3)+1i*sin(dG3+d3)) - V3*(cos(d3)+1i*sin(d3)) )/ X3;
-disp('G2 V and Delta relative to slack bus');
-fprintf('  dG2 = %+.3f Degrees\n  e_afG2 = %+.3f\n\n',dG3+d3, e_afG3);
-I3_v2 = (V3*B(3,3)+V3*B(3,2)+V1*B(3,1))*XkVb(1)
+Zijpu = Zpu(Zij); % Z12, Z13, Z24, Z34
+Tijpu = Zpu(Tij); % T12, T21, T13, T34
+Xkpu  = [0, Zpu(Xk)]; % S,  G1, G2, M1
+Tkpu  = [0, Zpu(Tk)]; % T1, T2, T3, T4
 
+XG1 = Xkpu(2)+Tkpu(3);
+d_eaf_G1 =  atan( (P3*XG1/V3) / ((Q3*XG1/V3) + V3) ) + d3;
+eaf_G1_pu = (P3*XG1)/(V3*sin(d_eaf_G1 - d3));
+eaf_G1= eaf_G1_pu*13.8*k;
+disp('G2 V and Delta relative to slack bus (actual):');
+fprintf('  d_eaf_G1 = %+.3f Degrees\n  eaf_G1 = %+.3f kV\n\n', rad2deg(d_eaf_G1), eaf_G1/k);
+
+%% e.) Magnitude of I_G1
+I_G1 = ( eaf_G1_pu*(cos(d_eaf_G1)+1i*sin(d_eaf_G1)) - V3*(cos(d3)+1i*sin(d3)) ) / (1i*XG1);
+I_2 = ( V3*(cos(d3)+1i*sin(d3)) - V1*(cos(d1)+1i*sin(d1))) / (1i*Zleft);
+I_3 = ( V3*(cos(d3)+1i*sin(d3)) - V4*(cos(d4)+1i*sin(d4))) / (1i*Zbottom);
+I_G1_v2 = I_2+I_3;
+Ib_G1 = XkVb(1) / (XkVb(1)^2 / Sb);
+Ib_B3 = Sb/(69*k);
+abs(I_G1)*Ib_G1;
+abs(I_G1_v2)*Ib_B3;
+disp('Magnitude of current at G1 and Bus 3');
+fprintf('I_G1 = %+.3f kA\nI_bus3 = %+.3f A\n\n',...
+            abs(I_G1)*Ib_G1/k, abs(I_G1_v2)*Ib_B3);
+%% f.) Maximum Power at G1 (G1 Pull-over power)
+PG1_max_pu = V3*eaf_G1_pu / XG1;
+PG1_max = PG1_max_pu*Sb;
+disp('Pull-over power of G1');
+fprintf('P_G1_max = %+.3f MW\n\n',PG1_max/M);
+
+%% g.)
