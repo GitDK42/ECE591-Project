@@ -44,13 +44,13 @@ Z = Zpu_old.*Zb_old;
 Zb = Vb.^2 ./ Sb;
 Zpu = Zpu_old.*Zb_old./Zb;
 %                 Z12   Z13   Z24   Z34
-Zpu_line = round([120, 4.76, 2.38, 7.14]./Zb([2,3,7,4]),2);%[200*k, 69*k, 34.5*k, 69*k];
+Zpu_line = [120, 4.76, 2.38, 7.14]./Zb([2,3,7,4]);%round([120, 4.76, 2.38, 7.14]./Zb([2,3,7,4]),2);%
 Zpu = [Zpu, Zpu_line];
 Zij = (11:14);
 for i = 1:14
     fprintf('%s %f\n',str(i,:),Zpu(i));
 end
-
+% Zpu(Xk(2)) = 0.4;
 %% b.) Ybus
 
 % [ 1/(T12+Z12+T21+T13+Z13)  -1/(T12+Z12+T21)  -1/(T13+Z13)          0     ]    
@@ -86,18 +86,23 @@ d1 = 0;
 P2 = 0.25; P3 = 0.35; P4 = -0.72;
 Q4 = -0.19;
 
+% f1 = @(d2, d3, d4, v4) 1.5865*sin(d2) + v4*3.012*sin(d2-d4); %P2
+% f2 = @(d2, d3, d4, v4) 5.1*sin(d3) + 3.2436*v4*sin(d3-d4); %P3
+% f3 = @(d2, d3, d4, v4) v4*4.75*sin(d4-d2) + v4*3.2436*sin(d4-d3); %P4
+% f4 = @(d2, d3, d4, v4) 10.68*(v4^2) - v4*4.75*cos(d4-d2) - v4*3.2436*cos(d4-d3); %Q4
+
 f1 = @(d2,d3,d4,V4) ...
-    ( -P2 + V2*B(2,1)*sin(d2-d1)+V2*V4*B(2,4)*sin(d2-d4) );  % P2 eq
+    ( -P2 + (+V2*B(2,1)*sin(d2-d1) + V2*V4*B(2,4)*sin(d2-d4)) );  % P2 eq
 f2 = @(d2,d3,d4,V4) ...
-    ( -P3 + V3*B(3,1)*sin(d3-d1)+V3*V4*B(3,4)*sin(d3-d4) );  % P3 eq
+    ( -P3 + (+V3*B(3,1)*sin(d3-d1) + V3*V4*B(3,4)*sin(d3-d4)) );  % P3 eq
 f3 = @(d2,d3,d4,V4) ...
-    ( -P4 + V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3) );  % P4 eq
+    ( -P4 + (+V4*V2*B(4,2)*sin(d4-d2) + V4*V3*B(4,3)*sin(d4-d3)) );  % P4 eq
 f4 = @(d2,d3,d4,V4) ...
-    ( -Q4 - B(4,4)*V4^2 - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3) ); % Q4 eq
+    ( -Q4 + (-B(4,4)*V4^2 - V4*V2*B(4,2)*cos(d4-d2) - V4*V3*B(4,3)*cos(d4-d3)) ); % Q4 eq
 
 J = @(d2,d3,d4,V4)...
  [V2*B(2,1)*cos(d2-d1)+V2*V4*B(2,4)*cos(d2-d4), 0, -V2*V4*B(2,4)*cos(d2-d4), V2*B(2,4)*sin(d2-d4); ...
- 0, V3*B(3,1)*cos(d3-d1)+V3*V4*B(3,4)*cos(d3-d4), -V3*V4*B(3,4)*cos(d3-d4), V3*B(3,4)*sin(d3-d4);...
+ +0, V3*B(3,1)*cos(d3-d1)+V3*V4*B(3,4)*cos(d3-d4), -V3*V4*B(3,4)*cos(d3-d4), V3*B(3,4)*sin(d3-d4);...
  -V4*V2*B(4,2)*cos(d4-d2), -V4*V3*B(4,3)*cos(d4-d3), V4*V2*B(4,2)*cos(d4-d2)+V4*V3*B(4,3)*cos(d4-d3), V2*B(4,2)*sin(d4-d2)+V3*B(4,3)*sin(d4-d3);...
  -V4*V2*B(4,2)*sin(d4-d2), -V4*V3*B(4,3)*sin(d4-d3), V4*V2*B(4,2)*sin(d4-d2)+V4*V3*B(4,3)*sin(d4-d3), -2*V4*B(4,4)-V2*B(4,2)*cos(d4-d2)-V3*B(4,3)*cos(d4-d3)];
 
@@ -149,17 +154,18 @@ while(abs(dx(1)) >= threshold ...
     end
 end
 rad2deg=@(x) 180*x/pi;
+deg2rad=@(x) pi*x/180;
 disp('Error Output:');
 fprintf(['  Delta_2 Error = %f radians\n  Delta_3 Error = %f radians\n  Delta_4 Error = %f radians\n'...
     '  V4 Error = %f Volts\n'...
     'Num Iterations = %i\n\n'],...
     dx(1), dx(2), dx(3), dx(4),iterations);
 %% TEMPORARY SUPER SECRET TO DELETE WHEN WE ARE CORRECT ABOVE:
-warning('Remember to fix code so d2,3,4 and V4 are close to:');
-d2 = -3.1985;
-d3 = -0.7113;
-d4 = -7.5007;
-V4 =  0.9495;
+% warning('Remember to fix code so d2,3,4 and V4 are close to:');
+% d2 = deg2rad(-3.1985);
+% d3 = deg2rad(-0.7113);
+% d4 = deg2rad(-7.5007);
+% V4 =  0.9495;
 % Bus Powers
 P1 =  V2*B(1,2)*sin(d1-d2) + V3*B(1,3)*sin(d1-d3);
 Q1 = -(V1^2)*B(1,1) - V2*B(1,2)*cos(d1-d2) - V3*B(1,3)*cos(d1-d3);
