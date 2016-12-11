@@ -178,17 +178,18 @@ while(abs(dx(1)) >= threshold ...
 end
 rad2deg=@(x) 180*x/pi;
 deg2rad=@(x) pi*x/180;
+pol = @(X,rad) X*exp(1i*rad);
 disp('Error Output:');
 fprintf(['  Delta_2 Error = %f radians\n  Delta_3 Error = %f radians\n  Delta_4 Error = %f radians\n'...
     '  V4 Error = %f Volts\n'...
     'Num Iterations = %i\n\n'],...
     dx(1), dx(2), dx(3), dx(4),iterations);
 %% TEMPORARY SUPER SECRET TO DELETE WHEN WE ARE CORRECT ABOVE:
-warning('Remember to fix code so d2,3,4 and V4 are close to:');
-d2 = deg2rad(-3.1985);
-d3 = deg2rad(-0.7113);
-d4 = deg2rad(-7.5007);
-V4 =  0.9495;
+% warning('Remember to fix code so d2,3,4 and V4 are close to:');
+% d2 = deg2rad(-3.1985);
+% d3 = deg2rad(-0.7113);
+% d4 = deg2rad(-7.5007);
+% V4 =  0.9495;
 % Bus Powers
 P1 =  V2*B(1,2)*sin(d1-d2) + V3*B(1,3)*sin(d1-d3);
 Q1 = -(V1^2)*B(1,1) - V2*B(1,2)*cos(d1-d2) - V3*B(1,3)*cos(d1-d3);
@@ -236,42 +237,50 @@ Tijpu = Zpu(Tij); % T12, T21, T13, T34
 Xkpu  = [0, Zpu(Xk)]; % S,  G1, G2, M1
 Tkpu  = [0, Zpu(Tk)]; % T1, T2, T3, T4
 
-XG1 = Xkpu(2)+Tkpu(3);
-d_eaf_G1 =  atan( (P3*XG1/V3) / ((Q3*XG1/V3) + V3) ) + d3;
-eaf_G1_pu = (P3*XG1)/(V3*sin(d_eaf_G1 - d3));
-eaf_G1= eaf_G1_pu*13.8*k;
+X3 = Xkpu(2)+Tkpu(3); % total impedance connected to Bus 3 non-grid side
+d_eaf_G1 =  atan( (P3*X3/V3) / ((Q3*X3/V3) + V3) ) + d3;
+eaf_G1_pu = (P3*X3)/(V3*sin(d_eaf_G1 - d3));
+eaf_G1= eaf_G1_pu*XkVb(1);
 disp('G1 V and Delta relative to slack bus (actual):');
 fprintf('  d_eaf_G1 = %+.3f Degrees\n  eaf_G1 = %+.3f kV\n\n', rad2deg(d_eaf_G1), eaf_G1/k);
 
 %% e.) Magnitude of I_G1
-I_G1_pu = ( eaf_G1_pu*(cos(d_eaf_G1)+1i*sin(d_eaf_G1)) - V3*(cos(d3)+1i*sin(d3)) ) / (1i*XG1);
-I_2 = ( V3*(cos(d3)+1i*sin(d3)) - V1*(cos(d1)+1i*sin(d1))) / (1i*Zleft);
-I_3 = ( V3*(cos(d3)+1i*sin(d3)) - V4*(cos(d4)+1i*sin(d4))) / (1i*Zbottom);
+I_G1_pu = ( pol(eaf_G1_pu,d_eaf_G1) - pol(V3,d3) ) / (1i*X3);
+I_2 = ( pol(V3,d3) - pol(V1,d1) ) / (1i*Zleft);
+I_3 = ( pol(V3,d3) - pol(V4,d4) ) / (1i*Zbottom);
 I_G1_v2_pu = I_2+I_3;
 Ib_G1 = Sb/XkVb(1) / sqrt(3); % Sbase_G1 / Vbase_G1
 Ib_B3 = Sb/(69*k) / sqrt(3);
 I_G1 = abs(I_G1_pu)*Ib_G1;
 I_G1_v2 = abs(I_G1_v2_pu)*Ib_B3;
 disp('Magnitude of current at G1 and Bus 3');
-fprintf('I_G1 = %+.3f kA\nI_bus3 = %+.3f A\n\n',...
+fprintf('  I_G1 = %+.3f kA\n  I_bus3 = %+.3f A\n\n',...
             I_G1/k, I_G1_v2);
 % conj(I_G1_pu)*eaf_G1_pu*Sb;
 % conj(I_G1)*eaf_G1*sqrt(3);
 % ((P3*eaf_G1_pu)*Ib_G1)/cos(d_eaf_G1);
 %% f.) Maximum Power at G1 (G1 Pull-over power)
-PG1_max_pu = V3*eaf_G1_pu / XG1;
+PG1_max_pu = V3*eaf_G1_pu / X3;
 PG1_max = PG1_max_pu*Sb;
 disp('Pull-over power of G1');
-fprintf('P_G1_max = %+.3f MW\n\n',PG1_max/M);
+fprintf('  P_G1_max = %+.3f MW\n\n',PG1_max/M);
 
-%% g.) Actual Voltage of M1
-XM1 = Xkpu(4)+Tkpu(4);
-d_eaf_M1 =  atan( (P4*XM1/V4) / ((Q4*XM1/V4) + V4) ) + d4;
-eaf_M1_pu = (P4*XM1)/(V4*sin(d_eaf_M1 - d4));
-eaf_M1= eaf_M1_pu*13.8*k;
+%% g.) Actual Voltage of M1 Terminal, Va
+X4 = Xkpu(4)+Tkpu(4);
+d_eaf_M1 =  atan( (P4*X4/V4) / ((Q4*X4/V4) + V4) ) + d4;
+eaf_M1_pu = (P4*X4)/(V4*sin(d_eaf_M1 - d4));
+eaf_M1= eaf_M1_pu*XkVb(3);
 disp('M1 V and Delta relative to slack bus (actual):');
-fprintf('  d_eaf_M1 = %+.3f Degrees\n  eaf_M1 = %+.3f kV\n\n', rad2deg(d_eaf_M1), eaf_M1/k);
+fprintf('  d_eaf_M1 = %+.3f Degrees\n  eaf_M1 = %+.3f kV\n\n', ...
+         rad2deg(d_eaf_M1), eaf_M1/k);
 
+I_M1_pu = conj( (P4+1i*Q4)/pol(V4,d4) );
+Va_pu = pol(V4,d4) - I_M1_pu*1i*Tkpu(4);
+Va = Va_pu*XkVb(3);
+disp('Actual Voltage at M1 terminals:');
+fprintf('  Magnitude Va_M1 = %+.3f kV \n  Angle Va_M1 = %.3f Degrees\n\n', ...
+            abs(Va)/k, rad2deg(angle(Va)));
+        
 %% h.) Torque of M1
 poles = 6; fe = 60;
 ws = 4*pi/6*fe;
@@ -279,4 +288,39 @@ T_M1 = (-P4)*Sb / ws;  % P_M1 = -P4
 disp('Torque of M1:');
 fprintf('T_M1 = %+.3f kNm\n\n', T_M1/k);
 
-%% 
+%% i.) eaf_M1 and d_eaf_M1 for Q4 = 0;
+d_eaf_M1_Q0 =  atan( (P4*X4) ) + d4;
+eaf_M1_pu_Q0 = (P4*X4)/(V4*sin(d_eaf_M1_Q0 - d4));
+eaf_M1_Q0= eaf_M1_pu_Q0*XkVb(3);
+disp('M1 V and Delta for Q4 = 0 (actual):');
+fprintf('  d_eaf_M1_Q0 = %+.3f Degrees\n  eaf_M1_Q0 = %+.3f kV\n\n', ...
+        rad2deg(d_eaf_M1_Q0), eaf_M1_Q0/k);
+    
+%% PSIM Needed Stuff
+
+X4 = Xkpu(4)+Tkpu(4);
+d_eaf_M1 =  atan( (P4*X4/V4) / ((Q4*X4/V4) + V4) ) + d4;
+eaf_M1_pu = (P4*X4)/(V4*sin(d_eaf_M1 - d4));
+eaf_M1= eaf_M1_pu*XkVb(3);
+
+X2 = Xkpu(3)+Tkpu(2);
+d_eaf_G2 =  atan( (P2*X2/V2) / ((Q2*X2/V2) + V2) ) + d2;
+eaf_G2_pu = (P2*X2)/(V2*sin(d_eaf_G2 - d2));
+eaf_G2= eaf_G2_pu*XkVb(2);
+
+disp('Values to use in PSIM (per unit):');
+fprintf(['  V1 = %+.3f\n  d1 = %+.3f\n',...
+         '  V2 = %+.3f\n  d2 = %+.3f\n',...
+         '  V3 = %+.3f\n  d3 = %+.3f\n',...
+         '  V4 = %+.3f\n  d4 = %+.3f\n',...
+         '  VSlack = %+.3f\n  dSlack = %+.3f\n',...
+         '  eaf_G1 = %+.3f\n  d_eaf_G1 = %+.3f\n',...
+         '  eaf_VG2 = %+.3f\n  d_eaf_G2 = %+.3f\n',...
+         '  eaf_VM1 = %+.3f\n  d_eaf_M1 = %+.3f\n',...
+         '  Xtop = %+.3f\n  Xleft = %+.3f\n  Xright = %+.3f\n  Xbottom = %+.3f\n',...
+         '  X2 = %+.3f\n  X3 = %+.3f\n  X4 = %+.3f\n\n'],...
+         V1, rad2deg(d1), V2, rad2deg(d2), V3, rad2deg(d3), V4, rad2deg(d4), ...
+         V1, rad2deg(d1), eaf_G1_pu, rad2deg(d_eaf_G1), ...
+         eaf_G2_pu, rad2deg(d_eaf_G2), eaf_M1_pu, rad2deg(d_eaf_M1),...
+         Ztop, Zleft, Zright, Zbottom,...
+         X2, X3, X4);
