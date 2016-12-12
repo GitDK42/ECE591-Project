@@ -324,3 +324,34 @@ fprintf(['  V1 = %+.3f\n  d1 = %+.3f\n',...
          eaf_G2_pu, rad2deg(d_eaf_G2), eaf_M1_pu, rad2deg(d_eaf_M1),...
          Ztop, Zleft, Zright, Zbottom,...
          X2, X3, X4);
+     
+ %% Fuck this part:
+ I4l = -pol(eaf_M1_pu,d_eaf_M1) / (Tkpu(2)-(0.1*Xkpu(4)+Tkpu(4)) - Zright);
+ I5l = pol(eaf_G2_pu,d_eaf_G2) / (0.1*Xkpu(3));
+ Ib_G2 = Sb / (sqrt(3)*Vb(9)); % Sb / (sqrt(3)Vb_G2
+ I_Fl_max = abs(Ib_G2*(I4l-I5l))*1.6;
+ 
+ I1n = pol(V1,d1)/Zleft;
+ I5ndd = -pol(eaf_G1_pu,d_eaf_G1) / (Tkpu(3) + 0.1*Xkpu(2)); 
+ I5nd = -pol(eaf_G1_pu,d_eaf_G1) / (Tkpu(3) + 0.4*Xkpu(2));
+ I5n = -pol(eaf_G1_pu,d_eaf_G1) / (Tkpu(3) + Xkpu(2));
+ Ib_b3 = Sb / (sqrt(3)*Vb(3));
+ LddG1 = Xkpu(2)*.1/(2*pi*60);
+ LdG1 = Xkpu(2)*.4/(2*pi*60);
+ LG1 = Xkpu(2)/(2*pi*60);
+ R = 0.1;
+ taudd = LddG1/R;
+ taud = LdG1/R;
+ tau = LG1/R;
+ t = 3/60;
+ Idd = I1n - I5ndd;
+ Id = I1n - I5nd;
+ I = I1n - I5n;
+ %I_Fn_3cycles = abs(Ib_b3*((Idd - Id)*exp(-t/taudd) + (Id - I)*exp(-t/taud) + I));
+ I_Fn_3cycles = abs(Ib_b3*(Idd)*1.2);
+ 
+ disp('Fault Currents and Ratings:');
+ fprintf(['Rated momentary current of T2 for fault 1: %+.3f kA\n',...
+          'CB2 Size to disconnect G1 after 3 cycles: %+.3f kA\n\n'],...
+          I_Fl_max/k, I_Fn_3cycles/k);
+ 
